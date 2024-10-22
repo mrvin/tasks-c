@@ -21,13 +21,14 @@
 
 #include <ctype.h>
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
 #define MAX_NUM_NEIGHBORS 6
-#define BUFF_WORD_LENGTH 100
+#define BUFF_WORD_LENGTH 128
 #define FILE_DICTIONARY "/usr/share/dict/words"
 
 #define RESET "\033[0m"
@@ -43,7 +44,7 @@ typedef struct {
 } key;
 
 char *strupr(char *s);
-int check_qwerty_word(char *word, size_t len);
+int check_qwerty_word(const char *const word, size_t len);
 
 key const key_table[] = {
 	{'-', {0}},
@@ -163,32 +164,20 @@ char *strupr(char *s) {
 /**
  * \brief Проверка слова, можно ли его набрать на клавиатуре (QWERTY) двигаясь по соседним клавишам
  */
-int check_qwerty_word(char *word, size_t len) {
-	uint8_t ind_current_letter = 0;
-	for (uint8_t i = 0; i < NUM_KEY_TABLE; i++) {
-		if (word[0] == key_table[i].ch) {
-			ind_current_letter = i;
-			break;
-		}
-	}
-
-	for (size_t i = 1; i < (len - 1); i++) {
-		uint8_t flag = 0;
+int check_qwerty_word(const char *const word, size_t len) {
+	for (size_t i = 0; i < (len - 2); i++) {
+		bool is_qwerty = false;
+		uint8_t ind = word[i] - ('a' - 1);
 		for (uint8_t j = 0; j < MAX_NUM_NEIGHBORS; j++) {
-			uint8_t ind_j = key_table[ind_current_letter].ind_neighbors[j] - ('a' - 1);
-			if (ind_j != 0) {
-				if (word[i] == key_table[ind_j].ch) {
-					ind_current_letter = ind_j;
-					flag = 1;
-					break;
-				}
-			} else {
+			if (word[i + 1] == key_table[ind].ind_neighbors[j]) {
+				is_qwerty = true;
 				break;
 			}
 		}
-		if (flag == 0) {
+		if (!is_qwerty) {
 			return 0;
 		}
 	}
+
 	return 1;
 }
